@@ -1,15 +1,6 @@
 from fastapi import FastAPI, HTTPException
-from enum import Enum
 
 app = FastAPI()
-
-class GenreURLChoices(Enum):
-    METAL = 'metal'
-    ROCK = 'rock'
-    COUNTRY = 'country'
-    POP = 'pop'
-    RNB = 'rnb'
-    COMEDY = 'comedy'
 
 BANDS = [
     {'id': 1, 'name': 'Black Sabbath', 'genre': 'Metal'},

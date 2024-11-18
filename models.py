@@ -1,4 +1,13 @@
 from sqlalchemy import Field, SQLModel, Relationship
+from enum import Enum
+
+class GenreURLChoices(Enum):
+    METAL = 'metal'
+    ROCK = 'rock'
+    COUNTRY = 'country'
+    POP = 'pop'
+    RNB = 'rnb'
+    COMEDY = 'comedy'
 
 class AlbumBase(SQLModel):
     title: str
@@ -10,6 +19,7 @@ class Album(AlbumBase, table=True):
     band: "Band"=Relationship(back_populates="albums")
     
 class BandBase(SQLModel):
+    # {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy'},
     name: str
     genre: str
 
