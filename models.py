@@ -1,5 +1,9 @@
-from sqlalchemy import Field, SQLModel, Relationship
+from sqlmodel import SQLModel, Relationship, Field
+from pydantic import BaseModel
+
+        
 from enum import Enum
+from datetime import date
 
 class GenreURLChoices(Enum):
     METAL = 'metal'
@@ -9,20 +13,21 @@ class GenreURLChoices(Enum):
     RNB = 'rnb'
     COMEDY = 'comedy'
 
-class AlbumBase(SQLModel):
+class Album(SQLModel):
     title: str
-    release_year: int
-    band_id: int = Field(foreign_key="band.id")
+    release_date: date
+    #band_id: int #= Field(foreign_key="band.id")
     
-class Album(AlbumBase, table=True):
-    id: int = Field(default=None, primary_key=True)
-    band: "Band"=Relationship(back_populates="albums")
+#class Album(AlbumBase, table=True):
+    #id: int = Field(default=None, primary_key=True)
+    #band: "Band"=Relationship(back_populates="albums")
     
-class BandBase(SQLModel):
+class Band(BaseModel):
     # {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy'},
     name: str
     genre: str
-
-class Band(BandBase, table=True):
-    id: int = Field(default=None, primary_key=True)
-    album: list[Album] = Relationship(back_populates="band")
+    albums: list[Album] = []
+    
+#class Band(BandBase):
+    #id: int = Field(default=None, primary_key=True)
+    #album: list[Album] = Relationship(back_populates="band")

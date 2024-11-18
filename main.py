@@ -1,14 +1,26 @@
 from fastapi import FastAPI, HTTPException
-
+from models import Band, GenreURLChoices
 app = FastAPI()
 
 BANDS = [
-    {'id': 1, 'name': 'Black Sabbath', 'genre': 'Metal'},
-    {'id': 2, 'name': 'Led Zeppelin', 'genre': 'Rock'},
-    {'id': 3, 'name': 'Dixie Chicks', 'genre': 'Country'},
-    {'id': 4, 'name': 'Pink', 'genre': 'Pop'},
-    {'id': 5, 'name': 'The Supremes', 'genre': 'R&B'},
-    {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy'},
+    {'id': 1, 'name': 'Black Sabbath', 'genre': 'Metal', 'albums': [
+        {'title': 'Black Sabbath', 'release_date': '1970-02-13'},
+        {'title': 'Paranoid', 'release_date': '1970-09-18'},]},
+    {'id': 2, 'name': 'Led Zeppelin', 'genre': 'Rock', 'albums': [
+        {'title': 'Led Zeppelin', 'release_date': '1969-01-12'},
+        {'title': 'Led Zeppelin II', 'release_date': '1969-10-22'},]},
+    {'id': 3, 'name': 'Dixie Chicks', 'genre': 'Country', 'albums': [
+        {'title': 'Wide Open Spaces', 'release_date': '1998-01-27'},
+        {'title': 'Fly', 'release_date': '1999-08-31'},]},
+    {'id': 4, 'name': 'Pink', 'genre': 'Pop', 'albums': [
+        {'title': 'Can\'t Take Me Home', 'release_date': '2000-04-04'},
+        {'title': 'Missundaztood', 'release_date': '2001-11-20'},]},
+    {'id': 5, 'name': 'The Supremes', 'genre': 'R&B', 'albums': [
+        {'title': 'Meet The Supremes', 'release_date': '1962-12-12'},
+        {'title': 'Where Did Our Love Go', 'release_date': '1964-08-31'},]},
+    {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy', 'albums': [
+        {'title': 'Here\'s Your Sign', 'release_date': '1996-06-04'},
+        {'title': 'Dorkfish', 'release_date': '1998-10-06'},]},
 ]
 
 @app.get('/')
@@ -19,9 +31,29 @@ async def index() -> dict[str,str]:
 async def about() -> str:
     return 'About'
  
+""" @app.get('/bands')
+async def get_bands() -> list[Band]:
+    #return BANDS
+    # List comprehension
+    return [
+        Band(**kwargs) for kwargs in BANDS
+    ] """
+    
 @app.get('/bands')
-async def get_bands() -> list[dict]:
-    return BANDS
+async def get_bands(
+    genre: GenreURLChoices | None = None,
+    has_albums: bool = False
+    ) -> list[Band]:
+    #if using query parameters, allow for no parameters by allowing None
+    # not in url or empty in url
+    band_list = [Band(**kwargs) for kwargs in BANDS]
+    
+    if genre:
+        band_list =  [b for b in band_list if b.genre.lower() == genre.value]
+    if has_albums:
+        band_list = [b for b in band_list if len(b.albums) > 0]
+    return band_list
+    
 
 @app.get('/bands/{band_id}')
 async def get_band(band_id: int) -> dict:
@@ -32,6 +64,6 @@ async def get_band(band_id: int) -> dict:
     return band
 
 @app.get('/bands/genre/{genre}')
-async def get_band_by_genre(genre: GenreURLChoices) -> list[dict]:
+async def get_band_by_genre(genre: GenreURLChoices) -> list[Band]:
     bands = [band for band in BANDS if band['genre'].lower() == genre.value]
     return bands
