@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException
-from models import Band, GenreURLChoices
+from models import BandBase, BandCreate, BandWithID, GenreURLChoices
 app = FastAPI()
 
 BANDS = [
@@ -15,7 +15,7 @@ BANDS = [
     {'id': 4, 'name': 'Pink', 'genre': 'Pop', 'albums': [
         {'title': 'Can\'t Take Me Home', 'release_date': '2000-04-04'},
         {'title': 'Missundaztood', 'release_date': '2001-11-20'},]},
-    {'id': 5, 'name': 'The Supremes', 'genre': 'R&B', 'albums': [
+    {'id': 5, 'name': 'The Supremes', 'genre': 'RnB', 'albums': [
         {'title': 'Meet The Supremes', 'release_date': '1962-12-12'},
         {'title': 'Where Did Our Love Go', 'release_date': '1964-08-31'},]},
     {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy', 'albums': [
@@ -23,47 +23,38 @@ BANDS = [
         {'title': 'Dorkfish', 'release_date': '1998-10-06'},]},
 ]
 
-@app.get('/')
-async def index() -> dict[str,str]:
-    return {'hello':'world  '}
-
-@app.get('about')
-async def about() -> str:
-    return 'About'
- 
-""" @app.get('/bands')
-async def get_bands() -> list[Band]:
-    #return BANDS
-    # List comprehension
-    return [
-        Band(**kwargs) for kwargs in BANDS
-    ] """
-    
 @app.get('/bands')
 async def get_bands(
     genre: GenreURLChoices | None = None,
     has_albums: bool = False
-    ) -> list[Band]:
+    ) -> list[BandWithID]:
     #if using query parameters, allow for no parameters by allowing None
     # not in url or empty in url
-    band_list = [Band(**kwargs) for kwargs in BANDS]
+    band_list = [BandWithID(**kwargs) for kwargs in BANDS]
     
     if genre:
-        band_list =  [b for b in band_list if b.genre.lower() == genre.value]
+        band_list =  [b for b in band_list if b.genre.value.lower() == genre.value]
     if has_albums:
         band_list = [b for b in band_list if len(b.albums) > 0]
     return band_list
     
 
 @app.get('/bands/{band_id}')
-async def get_band(band_id: int) -> dict:
-    band = next((band for band in BANDS if band['id'] == band_id), None)
+async def get_band(band_id: int) -> BandWithID:
+    band = next((BandWithID(**band) for band in BANDS if band['id'] == band_id), None)
     if band is None:
         # status code 404
         raise HTTPException(status_code=404, detail='Band not found')
     return band
 
 @app.get('/bands/genre/{genre}')
-async def get_band_by_genre(genre: GenreURLChoices) -> list[Band]:
-    bands = [band for band in BANDS if band['genre'].lower() == genre.value]
+async def get_band_by_genre(genre: GenreURLChoices) -> list[BandWithID]:
+    bands = [BandWithID(**band) for band in BANDS if band['genre'].value.lower() == genre.value]
     return bands
+
+@app.post('/bands')
+async def create_band(band_data:BandCreate) -> BandWithID:
+    id = BANDS[-1]['id'] +1
+    band = BandWithID(id=id, **band_data.model_dump()).model_dump()
+    BANDS.append(band)
+    return band

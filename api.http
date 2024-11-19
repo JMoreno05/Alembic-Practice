@@ -1,0 +1,14 @@
+POST http://localhost:8000/bands/
+Content-Type: application/json
+
+{
+    "name":"Gangham",
+    "genre":"K-Pop"
+}
+
+###
+
+GET http://localhost:8000/bands/
+
+###
+GET http://localhost:8000/bands?genre=comedy
