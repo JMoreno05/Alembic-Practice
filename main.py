@@ -1,8 +1,16 @@
-from fastapi import FastAPI, HTTPException, Path, Query
-from models import BandBase, BandCreate, BandWithID, GenreURLChoices
+from fastapi import FastAPI, Depends, HTTPException, Path, Query
+from sqlmodel import Session, select
+from models import BandBase, BandCreate, Band, GenreURLChoices, Album
 from typing import Annotated
+from contextlib import asynccontextmanager
+from db import init_db, get_session
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app:FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 BANDS = [
     {'id': 1, 'name': 'Black Sabbath', 'genre': 'Metal', 'albums': [
@@ -28,18 +36,15 @@ BANDS = [
 @app.get('/bands')
 async def get_bands(
     genre: GenreURLChoices | None = None,
-    q: Annotated[str | None , Query(max_length=10)] = None
-    #has_albums: bool = False
-    ) -> list[BandWithID]:
-    #if using query parameters, allow for no parameters by allowing None
-    # not in url or empty in url
-    band_list = [BandWithID(**kwargs) for kwargs in BANDS]
+    q: Annotated[str | None , Query(max_length=10)] = None,
+    session: Session = Depends(get_session)
+    
+    ) -> list[Band]:
+    band_list = session.exec(select(Band)).all()
     
     if genre:
         band_list =  [b for b in band_list if b.genre.value.lower() == genre.value]
-    """ if has_albums:
-        band_list = [b for b in band_list if len(b.albums) > 0] """
-    
+        
     if q:
         band_list = [
             b for b in band_list if q.lower() in b.name.lower()#ab
@@ -49,21 +54,41 @@ async def get_bands(
     
 
 @app.get('/bands/{band_id}')
-async def get_band(band_id: Annotated[int, Path(title='The band ID')]) -> BandWithID:
-    band = next((BandWithID(**band) for band in BANDS if band['id'] == band_id), None)
+async def get_band(
+    band_id: Annotated[int, Path(title='The band ID')],
+    session: Session = Depends(get_session)
+) -> Band:
+    band = session.get(Band, band_id)
     if band is None:
         # status code 404
         raise HTTPException(status_code=404, detail='Band not found')
     return band
-
+"""
 @app.get('/bands/genre/{genre}')
-async def get_band_by_genre(genre: GenreURLChoices) -> list[BandWithID]:
-    bands = [BandWithID(**band) for band in BANDS if band['genre'].value.lower() == genre.value]
+async def get_band_by_genre(genre: GenreURLChoices) -> list[Band]:
+    bands = [Band(**band) for band in BANDS if band['genre'].value.lower() == genre.value]
     return bands
-
+"""
 @app.post('/bands')
-async def create_band(band_data:BandCreate) -> BandWithID:
-    id = BANDS[-1]['id'] +1
-    band = BandWithID(id=id, **band_data.model_dump()).model_dump()
-    BANDS.append(band)
+async def create_band(
+   band_data:BandCreate, 
+   session: Session = Depends(get_session)
+    ) -> Band:
+    band = Band(name=band_data.name,
+               genre=band_data.genre)
+    session.add(band)
+
+    if band_data.albums:
+      for album in band_data.albums:
+         album_obj = Album(
+            title=album.title,
+            release_date=album.release_date,
+            band=band) #using relationship instead of id that is not created yet
+         session.add(album_obj)
+
+    session.commit()
+
+    session.refresh(band) #refreshes the object with the new data from the db (pk created during commit))
+
     return band
+ 

@@ -2,13 +2,27 @@ POST http://localhost:8000/bands/
 Content-Type: application/json
 
 {
-    "name":"Gangham",
-    "genre":"K-Pop"
+    "name":"Shanaia Twain",
+    "genre":"Country"
+    }
+###
+POST http://localhost:8000/bands/
+Content-Type: application/json
+
+{
+    "name":"Dixie Chicks",
+    "genre":"Country",
+    "albums":[
+        {"title":"Wide Open Spaces",
+        "release_date": "2000-01-01"},
+        { "title": "Fly",
+        "release_date":"1998-01-01"}
+    ]
 }
 
 ###
 
-GET http://localhost:8000/bands/
+GET http://localhost:8000/bands
 
 ###
-GET http://localhost:8000/bands?q=bill
+GET http://localhost:8000/bands?q=dix

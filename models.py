@@ -21,33 +21,35 @@ class GenreChoices(Enum):
     RNB = 'RnB'
     COMEDY = 'Comedy'
 
-class Album(SQLModel):
+class AlbumBase(SQLModel):
     title: str
     release_date: date
-    #band_id: int #= Field(foreign_key="band.id")
     
-#class Album(AlbumBase, table=True):
-    #id: int = Field(default=None, primary_key=True)
-    #band: "Band"=Relationship(back_populates="albums")
     
-class BandBase(BaseModel):
+class Album(AlbumBase, table=True):
+    id: int = Field(default=None, primary_key=True)
+    band: "Band"=Relationship(back_populates="albums")
+    band_id: int | None = Field(foreign_key="band.id")
+    #instance of the band object, reference the band using a string b/c band is defined below this
+
+    
+class BandBase(SQLModel):
     # contains common fields but will never be used in the app. 
     # will be referenced in other subclasses
     # {'id': 6, 'name': 'Bill Engvall', 'genre': 'Comedy'},
     name: str
     genre: GenreChoices
-    albums: list[Album] = []
 
+
+    
 class BandCreate(BandBase):
+    albums: list[AlbumBase] | None = None
     @validator('genre', pre=True)
     def title_case_genre(cls,value):
         if value == 'rnb' :
             return "RnB"
-        return value.title() # rock -> Rock o
-
-class BandWithID(BandBase):
-    id:int
+        return value.title() # rock -> Rock 
     
-#class Band(BandBase):
-    #id: int = Field(default=None, primary_key=True)
-    #album: list[Album] = Relationship(back_populates="band")
+class Band(BandBase, table=True):
+    id: int = Field(default=None, primary_key=True)
+    albums: list[Album] = Relationship(back_populates="band")
