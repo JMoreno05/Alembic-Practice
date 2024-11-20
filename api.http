@@ -11,4 +11,4 @@ Content-Type: application/json
 GET http://localhost:8000/bands/
 
 ###
-GET http://localhost:8000/bands?genre=comedy
+GET http://localhost:8000/bands?q=bill

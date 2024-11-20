@@ -1,5 +1,7 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Path, Query
 from models import BandBase, BandCreate, BandWithID, GenreURLChoices
+from typing import Annotated
+
 app = FastAPI()
 
 BANDS = [
@@ -26,7 +28,8 @@ BANDS = [
 @app.get('/bands')
 async def get_bands(
     genre: GenreURLChoices | None = None,
-    has_albums: bool = False
+    q: Annotated[str | None , Query(max_length=10)] = None
+    #has_albums: bool = False
     ) -> list[BandWithID]:
     #if using query parameters, allow for no parameters by allowing None
     # not in url or empty in url
@@ -34,13 +37,19 @@ async def get_bands(
     
     if genre:
         band_list =  [b for b in band_list if b.genre.value.lower() == genre.value]
-    if has_albums:
-        band_list = [b for b in band_list if len(b.albums) > 0]
+    """ if has_albums:
+        band_list = [b for b in band_list if len(b.albums) > 0] """
+    
+    if q:
+        band_list = [
+            b for b in band_list if q.lower() in b.name.lower()#ab
+        ]
+
     return band_list
     
 
 @app.get('/bands/{band_id}')
-async def get_band(band_id: int) -> BandWithID:
+async def get_band(band_id: Annotated[int, Path(title='The band ID')]) -> BandWithID:
     band = next((BandWithID(**band) for band in BANDS if band['id'] == band_id), None)
     if band is None:
         # status code 404

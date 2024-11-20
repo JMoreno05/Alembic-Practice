@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, Relationship, Field
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, validator
 
         
 from enum import Enum
@@ -39,7 +39,7 @@ class BandBase(BaseModel):
     albums: list[Album] = []
 
 class BandCreate(BandBase):
-    @field_validator('genre', pre=True)
+    @validator('genre', pre=True)
     def title_case_genre(cls,value):
         if value == 'rnb' :
             return "RnB"
